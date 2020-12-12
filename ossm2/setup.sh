@@ -187,7 +187,7 @@ echo "Press anykey to continue..."
 read
 echo
 set -x
-curl -k https://$FRONTEND_URL
+curl -kv https://$FRONTEND_URL
 set +x
 
 echo
@@ -196,7 +196,7 @@ echo "Press anykey to continue..."
 read
 echo
 set -x
-curl -k --cacert certs/ca-chain.cert.pem \
+curl -kv --cacert certs/ca-chain.cert.pem \
 --cert certs/client.cert.pem \
 --key certs/client.key.pem \
 https://$FRONTEND_URL
