@@ -125,30 +125,21 @@ echo "Deploy applications to $DATA_PLANE"
 oc apply -f apps/deployment.yaml
 check_pod $DATA_PLANE 2 Running
 
+# echo
+# echo "Create certificate and key for frontend-gateway"
+# oc create secret tls frontend-credential \
+# --cert certs/cert.pem \
+# --key certs/key.pem \
+# -n $CONTROL_PLANE
 
 echo
-echo "Create certificate and key for istio-ingressgateway"
-oc create secret tls istio-ingressgateway-certs \
---cert certs/cert.pem \
---key certs/key.pem \
+echo "Create secret frontend-credential for TLS key, certificate and client certificates"
+oc create secret generic frontend-credential \
+--from-file=tls.key=certs/key.pem \
+--from-file=tls.crt=certs/cert.pem \
+--from-file=ca.crt=certs/ca-chain.cert.pem \
 -n $CONTROL_PLANE
 
-echo
-echo "Create CA certificate for mutual TLS authentication"
-oc create secret generic istio-ingressgateway-ca-certs \
---from-file=certs/ca-chain.cert.pem \
--n $CONTROL_PLANE
-
-echo
-echo "Restart istio-ingressgateway"
-oc patch deployment istio-ingressgateway \
--p '{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt": "'`date +%FT%T%z`'"}}}}}' \
--n $CONTROL_PLANE
-
-clear
-sleep 3
-oc get pods -n $CONTROL_PLANE | grep istio-ingressgateway
-sleep 5
 
 backup_istio_files
 

@@ -11,10 +11,7 @@ spec:
       name: https
       protocol: HTTPS
     tls:
-      mode: MUTUAL # For TLS only use SIMPLE
-      # credentialName: default-router-certs # must be the same as secret - OSSM 1.x not support SDS??
-      privateKey: /etc/istio/ingressgateway-certs/tls.key
-      serverCertificate: /etc/istio/ingressgateway-certs/tls.crt
-      caCertificates: /etc/istio/ingressgateway-ca-certs/ca-chain.cert.pem # Client Cert Authen
+      mode: MUTUAL # For TLS only use SIMPLE, for mTLS use MUTUAL
+      credentialName: frontend-credential
     hosts:
     - 'frontend.DOMAIN'
