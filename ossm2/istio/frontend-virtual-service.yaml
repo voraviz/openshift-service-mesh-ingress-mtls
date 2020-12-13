@@ -4,7 +4,7 @@ metadata:
   name: frontend
 spec:
   hosts:
-  - frontend.DOMAIN
+  - frontend-DATA_PLANE.DOMAIN
   gateways:
   - frontend-gateway.CONTROL_PLANE.svc.cluster.local
   http:

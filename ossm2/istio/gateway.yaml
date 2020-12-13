@@ -14,4 +14,4 @@ spec:
       mode: MUTUAL # For TLS only use SIMPLE, for mTLS use MUTUAL
       credentialName: frontend-credential
     hosts:
-    - 'frontend.DOMAIN'
+    - 'frontend-DATA_PLANE.DOMAIN'

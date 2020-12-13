@@ -17,4 +17,4 @@ spec:
       serverCertificate: /etc/istio/ingressgateway-certs/tls.crt
       caCertificates: /etc/istio/ingressgateway-ca-certs/ca-chain.cert.pem # Client Cert Authen
     hosts:
-    - 'frontend.DOMAIN'
+    - 'frontend-DATA_PLANE.DOMAIN'
