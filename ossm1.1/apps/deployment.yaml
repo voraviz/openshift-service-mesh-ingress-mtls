@@ -81,7 +81,7 @@ spec:
         imagePullPolicy: Always
         env:
           - name: BACKEND_URL
-            value: http://backend:8080
+            value: http://backend:8080/version
         resources:
           requests:
             cpu: "0.1"
