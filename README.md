@@ -23,4 +23,35 @@ cd ossm2
 ./setup.sh
 ```
 
+## Load Test with JMeter
+
+JMeter JMX with preconfigred truststore and keystore JKS already prepared.
+
+Remark: Edit [run-test.sh](load-test/run-test.sh) to specified based installation path of JMeter to environment variable JMETER_BASE_PATH
+
+```
+cd load-test
+./run-test.sh <hostname - without https> <threads> <loops>
+# Example
+# ./run-test.sh frontend-data-plane.apps.example.com 200 500
+```
+
+Sample reports generated from testresult.jtl
+
+  - Aggregate report
+  
+    ![](images/jmeter-aggregate-report.png)
+
+  - Summary report
+
+    ![](images/jmeter-summary-report.png)
+
+Graph in Kiali Console
+
 ![](images/sample-kiali.png)
+
+You can check Grafana in Control Plane project workloads
+
+![](images/sample-grafana.png)
+
+
