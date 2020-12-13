@@ -9,7 +9,7 @@ function check_pod(){
         clear
         oc get pods -n ${PROJECT}
         sleep 5
-        COUNT=$( oc get pods -n ${PROJECT}|grep ${CONDITION} |wc -l)
+        COUNT=$( oc get pods -n ${PROJECT} --field-selector=status.phase=Running --no-headers|wc -l)
     done
 }
 
@@ -186,21 +186,27 @@ echo "Test without client certificate"
 echo "Press anykey to continue..."
 read
 echo
-set -x
+
 curl -kv https://$FRONTEND_URL
-set +x
+
 
 echo
 echo "Test with client TLS authentication"
 echo "Press anykey to continue..."
 read
 echo
-set -x
+
 curl -kv --cacert certs/ca-chain.cert.pem \
 --cert certs/client.cert.pem \
 --key certs/client.key.pem \
 https://$FRONTEND_URL
-set +x
+
+echo
+echo "You can test with cURL by:"
+echo "curl -kv --cacert certs/ca-chain.cert.pem \
+--cert certs/client.cert.pem \
+--key certs/client.key.pem \
+https://$FRONTEND_URL"
 
 echo
 echo "Check Kiali Console at https://$KIALI_URL"
