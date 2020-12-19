@@ -15,7 +15,7 @@ spec:
     type: Jaeger
   gateways:
     egress:
-        enabled: false
+        enabled: true
         runtime:
           container:
             resources:
