@@ -105,7 +105,7 @@ fi
 echo "Create Control Plane"
 echo "Script will automatically continue to next steps when control plane is finished"
 oc apply -f setup-ossm/smcp.yaml -n $CONTROL_PLANE
-check_pod $CONTROL_PLANE 6 Running
+check_pod $CONTROL_PLANE 7 Running
 
 echo "Join Data Plane to Control Plane"
 cp setup-ossm/smmr.yaml setup-ossm/smmr.bak
