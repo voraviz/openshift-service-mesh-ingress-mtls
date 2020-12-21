@@ -30,6 +30,31 @@ function restore_istio_files(){
     rm -f istio/*.bak
 }
 
+function get_control_plane_status(){
+  DONE=1
+  while [ $DONE -ne 0 ];
+  do
+    sleep 5
+    clear
+    CURRENT_STATUS=$(oc get smcp basic-install -n $CONTROL_PLANE -o jsonpath='{.status.annotations.readyComponentCount}')
+    printf "Ready Component Count: %s\n" "$CURRENT_STATUS"
+    READY=$(echo $CURRENT_STATUS|awk -F'/' '{print $1}')
+    TOTAL=$(echo $CURRENT_STATUS|awk -F'/' '{print $2}')
+    if [ $READY -gt 0 ];
+    then
+      printf "Ready: \n"
+      for i in $(oc get smcp basic-install -n $CONTROL_PLANE -o jsonpath='{.status.readiness.components.ready[*]}')
+      do
+        printf "=> %s\n" "$i"
+      done
+    fi
+    if [ $READY -eq  $TOTAL ];
+    then
+      DONE=0
+    fi
+  done
+}
+
 function verify_sidecar(){
   PROJECT=$1
   for pod in $(oc get pods -n $PROJECT --no-headers -o=custom-columns='DATA:metadata.name')
@@ -71,7 +96,7 @@ then
   sleep 2
 else
   echo "Creating project: $CONTROL_PLANE"
-  oc new-project $CONTROL_PLANE --display-name $CONTROL_PLANE --description="Service Mesh Control Plane"
+  oc new-project $CONTROL_PLANE --display-name $CONTROL_PLANE --description="Service Mesh Control Plane" 1>/dev/null
 fi
 
 echo "Enter the name of Service Mesh Data Plane project: "
@@ -85,7 +110,7 @@ then
   sleep 2
 else
   echo "Creating project: $DATA_PLANE"
-  oc new-project $DATA_PLANE --display-name $DATA_PLANE --description="Service Mesh Data Plane"
+  oc new-project $DATA_PLANE --display-name $DATA_PLANE --description="Service Mesh Data Plane" 1>/dev/null
 fi
 
 SUBDOMAIN=$(oc whoami --show-console  | awk -F'apps.' '{print $2}')
@@ -105,7 +130,7 @@ fi
 echo "Create Control Plane"
 echo "Script will automatically continue to next steps when control plane is finished"
 oc apply -f setup-ossm/smcp.yaml -n $CONTROL_PLANE
-check_pod $CONTROL_PLANE 7 Running
+get_control_plane_status
 
 echo "Join Data Plane to Control Plane"
 cp setup-ossm/smmr.yaml setup-ossm/smmr.bak
@@ -122,7 +147,7 @@ oc describe smmr/default -n $CONTROL_PLANE | grep -A2 Spec:
 sleep 5
 
 echo "Deploy applications to $DATA_PLANE"
-oc apply -f apps/deployment.yaml
+oc apply -f apps/deployment.yaml -n $DATA_PLANE
 check_pod $DATA_PLANE 2 Running
 
 # echo
