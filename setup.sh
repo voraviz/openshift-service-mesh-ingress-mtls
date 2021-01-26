@@ -190,12 +190,12 @@ oc apply -f istio/frontend-peer-authentication.yaml -n $DATA_PLANE
 echo 
 echo "Create Gateway and Route"
 oc apply -f istio/gateway.yaml -n $CONTROL_PLANE
-oc apply -f istio/route.yaml -n $CONTROL_PLANE
+#oc apply -f istio/route.yaml -n $CONTROL_PLANE
 
 restore_istio_files
 
-
-FRONTEND_URL="$(oc get route frontend -n $CONTROL_PLANE -o jsonpath='{.spec.host}' )"
+ROUTE=$(oc get route -n $CONTROL_PLANE | grep frontend | awk '{print $1}')
+FRONTEND_URL="$(oc get route $ROUTE -n $CONTROL_PLANE -o jsonpath='{.spec.host}' )"
 KIALI_URL="$(oc get route kiali -n $CONTROL_PLANE -o jsonpath='{.spec.host}')"
 
 echo

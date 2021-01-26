@@ -16,6 +16,13 @@ Prerequistes are install Operators requried by OpenShift Service Mesh. You need 
 # Following instruction provided by bash script
 ```
 
+To cleanup both control plane and data plane
+
+```bash
+./cleanup.sh
+```
+
+
 ## Load Test with JMeter
 
 JMeter with preconfigred truststore and keystore JKS already prepared.
