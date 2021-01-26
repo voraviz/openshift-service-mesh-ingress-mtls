@@ -1,23 +1,24 @@
 # Mutual TLS ingress gateway with Istio
 
-<!-- [setup.sh](ossm1.1/setup.sh) will automate create control plane, data plane, deploy applications and configured mTLS for all communiations but it does not install Operators requried by OpenShift Service Mesh. You need to install following Operators from OperatorHub.
+[setup.sh](setup.sh) will automate create control plane, data plane, deploy applications and configured mTLS for all communiations including ingress. 
+
+Prerequistes are install Operators requried by OpenShift Service Mesh. You need to install following Operators from OperatorHub.
 
 - ElasticSearch
 - Jaeger
 - Kiali
 - OpenShift Service Mesh
 
-## OpenShift Service Mesh 2.x
-Secure Gateways is enabled by default for OpenShift Service Mesh 2.0 (Istio 1.6)
+<!-- Secure Gateways is enabled by default for OpenShift Service Mesh 2.0 (Istio 1.6) -->
 
 ```bash
-cd ossm2
 ./setup.sh
+# Following instruction provided by bash script
 ```
 
 ## Load Test with JMeter
 
-JMeter JMX with preconfigred truststore and keystore JKS already prepared.
+JMeter with preconfigred truststore and keystore JKS already prepared.
 
 Remark: Edit [run-test.sh](load-test/run-test.sh) to specified based installation path of JMeter to environment variable JMETER_BASE_PATH
 
@@ -47,7 +48,7 @@ You can check Grafana in Control Plane project workloads
 ![](images/sample-grafana.png)
 
 
-## Pod Liveness & Readiness
+<!-- ## Pod Liveness & Readiness
 
 ```bash
 oc rollout pause deployment/backend-v1 
