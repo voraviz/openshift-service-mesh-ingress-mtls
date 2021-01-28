@@ -150,6 +150,8 @@ echo "Deploy applications to $DATA_PLANE"
 oc apply -f apps/deployment.yaml -n $DATA_PLANE
 check_pod $DATA_PLANE 2 Running
 
+mkdir -p certs
+
 echo
 echo "Create private key and certificate for frontend gateway"
 rm -f certs/example*
@@ -237,6 +239,7 @@ echo "Test with unauthorized certificate client"
 echo "Press anykey to continue..."
 read
 echo
+scripts/create-bad-client-certificate.sh
 
 curl -kv --cacert certs/pirate.com.crt \
 --cert certs/bad-partner.crt \
