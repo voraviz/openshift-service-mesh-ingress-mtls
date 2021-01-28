@@ -150,19 +150,24 @@ echo "Deploy applications to $DATA_PLANE"
 oc apply -f apps/deployment.yaml -n $DATA_PLANE
 check_pod $DATA_PLANE 2 Running
 
-# echo
-# echo "Create certificate and key for frontend-gateway"
-# oc create secret tls frontend-credential \
-# --cert certs/cert.pem \
-# --key certs/key.pem \
-# -n $CONTROL_PLANE
+echo
+echo "Create private key and certificate for frontend gateway"
+rm -f certs/example*
+rm -f certs/frontend*
+scripts/create-certificate.sh
+
+echo
+echo "Create private key and certificate for client"
+rm -f certs/acme*
+rm -f certs/great*
+scripts/create-client-certificate.sh
 
 echo
 echo "Create secret frontend-credential for TLS key, certificate and client certificates"
 oc create secret generic frontend-credential \
---from-file=tls.key=certs/key.pem \
---from-file=tls.crt=certs/cert.pem \
---from-file=ca.crt=certs/ca-chain.cert.pem \
+--from-file=tls.key=certs/frontend.key \
+--from-file=tls.crt=certs/frontend.crt \
+--from-file=ca.crt=certs/acme.com.crt \
 -n $CONTROL_PLANE
 
 
@@ -216,21 +221,33 @@ curl -kv https://$FRONTEND_URL
 
 
 echo
-echo "Test with client TLS authentication"
+echo "Test with authorized certificate client"
 echo "Press anykey to continue..."
 read
 echo
 
-curl -kv --cacert certs/ca-chain.cert.pem \
---cert certs/client.cert.pem \
---key certs/client.key.pem \
+curl -kv --cacert certs/acme.com.crt \
+--cert certs/great-partner.crt \
+--key certs/great-partner.key \
+https://$FRONTEND_URL
+
+
+echo
+echo "Test with unauthorized certificate client"
+echo "Press anykey to continue..."
+read
+echo
+
+curl -kv --cacert certs/pirate.com.crt \
+--cert certs/bad-partner.crt \
+--key certs/bad-partner.key \
 https://$FRONTEND_URL
 
 echo
 echo "You can test with cURL by:"
-echo "curl -kv --cacert certs/ca-chain.cert.pem \
---cert certs/client.cert.pem \
---key certs/client.key.pem \
+echo "curl -kv --cacert certs/acme.com.crt \
+--cert certs/great-partner.crt \
+--key certs/great-partner.key \
 https://$FRONTEND_URL"
 
 echo
