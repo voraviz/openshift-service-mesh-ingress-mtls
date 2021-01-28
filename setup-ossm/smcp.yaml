@@ -8,7 +8,7 @@ spec:
     controlPlane:
       mtls: true
     dataPlane:
-      automtls: true
+      automtls: false
       mtls: false
   tracing:
     sampling: 10000
