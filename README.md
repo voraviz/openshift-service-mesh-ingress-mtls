@@ -1,6 +1,6 @@
 # Mutual TLS ingress gateway with Istio
 
-[setup.sh](setup.sh) will automate create control plane, data plane, deploy applications and configured mTLS for all communiations including ingress. 
+[setup.sh](setup.sh) will automate create control plane, data plane, deploy applications and configured mTLS for all communications including ingress. 
 
 Prerequistes are install Operators requried by OpenShift Service Mesh. You need to install following Operators from OperatorHub.
 
