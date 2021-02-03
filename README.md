@@ -150,11 +150,11 @@ Prerequistes are install Operators requried by OpenShift Service Mesh. You need 
   
 ### Configure Gateway with TLS
 - Create CA, Private Key and Certificate for Gateway
-  - use [create-certificate.sh](scripts/create-client-certificate.sh)
+  - use [create-certificate.sh](scripts/create-certificate.sh)
   
     ```bash
     mkdir -p certs
-    scripts/create-client-certificate.sh
+    scripts/create-certificate.sh
     ```
 
   - Alternatively, run following command
@@ -181,7 +181,7 @@ Prerequistes are install Operators requried by OpenShift Service Mesh. You need 
   -n control-plane
   ```
   
-- Updating [Gateway](config/gateway-tls.yaml). Check that Gateway mTLS mode is set to SIMPLE
+- Updating [Gateway](config/gateway-tls.yaml) with TLS. Check that Gateway mTLS mode is set to SIMPLE
   
   ```bash
   SUBDOMAIN=$(oc whoami --show-console  | awk -F'apps.' '{print $2}')
@@ -245,8 +245,120 @@ Prerequistes are install Operators requried by OpenShift Service Mesh. You need 
   ```
 
 ### Configure Gateway with mTLS
-WIP
+- Create CA, Private Key and Certificate for Client named *Acme Inc*
+  - use [create-cleint-certificate.sh](scripts/create-client-certificate.sh)
+  
+    ```bash
+    mkdir -p certs
+    scripts/create-client-certificate.sh
+    ```
 
+  - Alternatively, run following command
+    
+    ```bash
+    mkdir -p certs
+    CN=great-partner.apps.acme.com
+    echo "Create Root CA and Private Key"
+    openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -subj '/O=Acme Inc./CN=acme.com' \
+    -keyout certs/acme.com.key -out certs/acme.com.crt
+    echo "Create Certificate and Private Key for $CN"
+    openssl req -out certs/great-partner.csr -newkey rsa:2048 -nodes -keyout certs/great-partner.key -subj "/CN=${CN}/O=Great Department"
+    openssl x509 -req -days 365 -CA certs/acme.com.crt -CAkey certs/acme.com.key -set_serial 0 -in certs/great-partner.csr -out certs/great-partner.crt
+    ```
+- Update secret with client's CA
+    
+  ```bash
+  oc delete secret frontend-credential -n control-plane
+  oc create secret generic frontend-credential \
+  --from-file=tls.key=certs/frontend.key \
+  --from-file=tls.crt=certs/frontend.crt \
+  --from-file=ca.crt=certs/acme.com.crt \
+  -n control-plane
+  ``` 
+- Updating [Gateway](config/gateway-mtls.yaml) with mTLS. Check that Gateway mTLS mode is set to MUTUAL
+  
+  ```bash
+  SUBDOMAIN=$(oc whoami --show-console  | awk -F'apps.' '{print $2}')
+  DOMAIN="apps.${SUBDOMAIN}"
+  curl -s  https://raw.githubusercontent.com/voraviz/openshift-service-mesh-ingress-mtls/main/config/gateway-mtls.yaml| sed 's/DOMAIN/'"$DOMAIN"'/' | oc apply -f -
+  ```
+- Use cURL to test without client certificate
+  
+  ```bash
+  curl -k https://frontend.$DOMAIN
+
+  # Sample output
+  curl: (35) error:1401E410:SSL routines:CONNECT_CR_FINISHED:sslv3 alert handshake failure
+  ```
+- Use cURL to test with *Acme Inc* certificate
+  
+  ```bash
+  curl -k --cacert certs/acme.com.crt \
+  --cert certs/great-partner.crt \
+  --key certs/great-partner.key \
+  https://frontend.$DOMAIN
+  ```
+
+- Create CA, Private Key and Certificate for another Client named *Pirate Inc*
+  - use [create-bad-cleint-certificate.sh](scripts/create-bad-client-certificate.sh)
+  
+    ```bash
+    mkdir -p certs
+    scripts/create-bad-client-certificate.sh
+    ```
+
+  - Alternatively, run following command
+    
+    ```bash
+    CN=bad-partner.apps.pirate.com
+    echo "Create Root CA and Private Key"
+    openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -subj '/O=Pirate Inc./CN=pirate.com' \
+    -keyout certs/pirate.com.key -out certs/pirate.com.crt
+    echo "Create Certificate and Private Key for $CN"
+    openssl req -out certs/bad-partner.csr -newkey rsa:2048 -nodes -keyout certs/bad-partner.key -subj "/CN=${CN}/O=Bad Department"
+    openssl x509 -req -days 365 -CA certs/pirate.com.crt -CAkey certs/pirate.com.key -set_serial 0 -in certs/bad-partner.csr -out certs/bad-partner.crt
+    ``` 
+- Use cURL to test with *Pirate Inc* certificate. You will get error *"alert unknown ca"*
+  
+  ```bash
+  curl -k --cacert certs/pirate.com.crt \
+  --cert certs/bad-partner.crt \
+  --key certs/bad-partner.key \
+  https://frontend.$DOMAIN
+  ```
+- Business department agreed deal with *Pirate Inc* to use our frontend service then we need to update our Gateway to trust *Pirate Inc*
+  - Create certificate file with both *Acme Inc* and *Private Inc*
+    
+    ```bash
+    cat certs/acme.com.crt > certs/trusted.crt
+    cat certs/pirate.com.crt >> certs/trusted.crt
+    ```
+
+  - Update frontend-credential secert
+    
+    ```bash
+    oc delete secret frontend-credential -n control-plane
+    oc create secret generic frontend-credential \
+    --from-file=tls.key=certs/frontend.key \
+    --from-file=tls.crt=certs/frontend.crt \
+    --from-file=ca.crt=certs/trusted.crt \
+    -n control-plane    
+    ```
+    
+  - Test with cURL using *Pirate Inc* and *Acme Inc* certificate.
+    ```bash
+    curl -k --cacert certs/pirate.com.crt \
+    --cert certs/bad-partner.crt \
+    --key certs/bad-partner.key \
+    https://frontend.$DOMAIN
+
+    curl -k --cacert certs/acme.com.crt \
+    --cert certs/great-partner.crt \
+    --key certs/great-partner.key \
+    https://frontend.$DOMAIN
+
+    ```
+  
 ## Interactive Command Line setup
 [setup.sh](setup.sh) will automate create control plane, data plane, deploy applications and configured mTLS for all communications including ingress. 
 
