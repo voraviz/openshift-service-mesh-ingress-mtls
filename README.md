@@ -124,9 +124,66 @@ Prerequistes are install Operators requried by OpenShift Service Mesh. You need 
   ```bash
   oc patch deployment/backend-v1 -p '{"spec":{"template":{"metadata":{"annotations":{"sidecar.istio.io/rewriteAppHTTPProbers":"true"}}}}}'
   ```
+- Check Kiali Graph. Dark blue line on lower part of diagram is health check traffic and green line is traffic from gateway to fronend and then to backend that is secured by mTLS (lock icon)
+  
+  ![kiali](images/kiali-graph-frontend-backend.png)
+  
+- Test that pod without sidecar cannot access backend
+  
+  ```bash
+  oc run test-station -n data-plane -i --image=quay.io/voravitl/backend-native:v1 --rm=true  --restart=Never -- curl -vs http://backend:8080
+
+  # Sample Output
+  * Rebuilt URL to: http://backend:8080/
+  *   Trying 172.30.77.122...
+  * TCP_NODELAY set
+  * Connected to backend (172.30.77.122) port 8080 (#0)
+  > GET / HTTP/1.1
+  > Host: backend:8080
+  > User-Agent: curl/7.61.1
+  > Accept: */*
+  >
+  * Recv failure: Connection reset by peer
+  * Closing connection 0
+  pod "test-station" deleted
+  ```
   
 ### Configure Gateway with TLS
-WIP
+- Create CA, Private Key and Certificate for Gateway
+  - use [create-certificate.sh](scripts/create-client-certificate.sh)
+  
+    ```bash
+    mkdir -p certs
+    scripts/create-client-certificate.sh
+    ```
+
+  - Alternatively, run following command
+    
+    ```bash
+    #!/bin/bash
+    mkdir -p certs
+    SUBDOMAIN=$(oc whoami --show-console  | awk -F'apps.' '{print $2}')
+    CN=frontend.apps.$SUBDOMAIN
+    echo "Create Root CA and Private Key"
+    openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -subj '/O=example Inc./CN=example.com' \
+    -keyout certs/example.com.key -out certs/example.com.crt
+    echo "Create Certificate and Private Key for $CN"
+    openssl req -out certs/frontend.csr -newkey rsa:2048 -nodes -keyout certs/frontend.key -subj "/CN=${CN}/O=Great Department"
+    openssl x509 -req -days 365 -CA certs/example.com.crt -CAkey certs/example.com.key -set_serial 0 -in certs/frontend.csr -out certs/frontend.crt
+    ```
+
+- Create secret to CA, Private Key and Cerfificate
+  
+  ```bash
+  oc create secret generic frontend-credential \
+  --from-file=tls.key=certs/frontend.key \
+  --from-file=tls.crt=certs/frontend.crt \
+  --from-file=ca.crt=certs/acme.com.crt \
+  -n control-plane
+  ```
+  
+- Update Gateway with TLS mode SIMPLE
+- Test with cURL
 
 ### Configure Gateway with mTLS
 WIP
