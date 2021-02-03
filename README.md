@@ -178,12 +178,71 @@ Prerequistes are install Operators requried by OpenShift Service Mesh. You need 
   oc create secret generic frontend-credential \
   --from-file=tls.key=certs/frontend.key \
   --from-file=tls.crt=certs/frontend.crt \
-  --from-file=ca.crt=certs/acme.com.crt \
   -n control-plane
   ```
   
-- Update Gateway with TLS mode SIMPLE
-- Test with cURL
+- Updating [Gateway](config/gateway-tls.yaml). Check that Gateway mTLS mode is set to SIMPLE
+  
+  ```bash
+  SUBDOMAIN=$(oc whoami --show-console  | awk -F'apps.' '{print $2}')
+  DOMAIN="apps.${SUBDOMAIN}"
+  curl -s  https://raw.githubusercontent.com/voraviz/openshift-service-mesh-ingress-mtls/main/config/gateway-tls.yaml| sed 's/DOMAIN/'"$DOMAIN"'/' | oc apply -f -
+  ```
+- Test with cURL. Check that certificate issuer is *O=example Inc.; CN=example.com* and subject is *CN=frontend.apps.; O=Great Department*
+  
+  ```bash
+  curl -kv https://frontend.$DOMAIN
+
+  # Sample Output
+  *   Trying 3.1.112.71...
+  * TCP_NODELAY set
+  * Connected to frontend.apps.cluster-ba08.ba08.example.opentlc.com (3.1.112.71) port 443 (#0)
+  * ALPN, offering h2
+  * ALPN, offering http/1.1
+  * successfully set certificate verify locations:
+  *   CAfile: /etc/ssl/cert.pem
+    CApath: none
+  * TLSv1.2 (OUT), TLS handshake, Client hello (1):
+  * TLSv1.2 (IN), TLS handshake, Server hello (2):
+  * TLSv1.2 (IN), TLS handshake, Certificate (11):
+  * TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+  * TLSv1.2 (IN), TLS handshake, Server finished (14):
+  * TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+  * TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+  * TLSv1.2 (OUT), TLS handshake, Finished (20):
+  * TLSv1.2 (IN), TLS change cipher, Change cipher spec (1):
+  * TLSv1.2 (IN), TLS handshake, Finished (20):
+  * SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384
+  * ALPN, server accepted to use h2
+  * Server certificate:
+  *  subject: CN=frontend.apps.; O=Great Department
+  *  start date: Feb  3 04:46:38 2021 GMT
+  *  expire date: Feb  3 04:46:38 2022 GMT
+  *  issuer: O=example Inc.; CN=example.com
+  *  SSL certificate verify result: unable to get local issuer certificate (20), continuing anyway.
+  * Using HTTP2, server supports multi-use
+  * Connection state changed (HTTP/2 confirmed)
+  * Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=0
+  * Using Stream ID: 1 (easy handle 0x7fcc83808600)
+  > GET / HTTP/2
+  > Host: frontend.apps.cluster-ba08.ba08.example.opentlc.com
+  > User-Agent: curl/7.64.1
+  > Accept: */*
+  >
+  * Connection state changed (MAX_CONCURRENT_STREAMS == 2147483647)!
+  < HTTP/2 200
+  < x-correlation-id: 90a41ac0-c693-4807-8684-ac9a3a153f77
+  < x-powered-by: Express
+  < content-type: text/html; charset=utf-8
+  < content-length: 177
+  < etag: W/"b1-2RNTCjZv6HdZfogo/ta6cwDM6sA"
+  < date: Wed, 03 Feb 2021 04:53:47 GMT
+  < x-envoy-upstream-service-time: 8
+  < server: istio-envoy
+  <
+  * Connection #0 to host frontend.apps.cluster-ba08.ba08.example.opentlc.com left intact
+  Frontend version: 1.0.0 => [Backend: http://backend:8080/version, Response: 200, Body: Backend version:v1, Response:200, Host:backend-v1-55898f64b4-pgfwk, Status:200, Message: ]* Closing connection 0
+  ```
 
 ### Configure Gateway with mTLS
 WIP
