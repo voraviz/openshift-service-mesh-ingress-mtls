@@ -47,6 +47,9 @@ Prerequistes are install Operators requried by OpenShift Service Mesh. You need 
 
   #Join data-plane namespace into control-plane
   oc create -f https://raw.githubusercontent.com/voraviz/openshift-service-mesh-istio-gateway/main/member-roll.yaml -n control-plane
+
+  #Check ServiceMeshControlPlane
+  oc describe smmr/default -n control-plane | grep Spec -A2
   ```
 
 - Deploy sample application
