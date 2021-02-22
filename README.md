@@ -16,7 +16,7 @@
 <!-- /TOC -->
 ## Prerequisites
 
-Prerequisites are install Operators requried by OpenShift Service Mesh. You need to install following Operators from OperatorHub.
+Prerequisites are install Operators required by OpenShift Service Mesh. You need to install following Operators from OperatorHub.
 
   - ElasticSearch
   - Jaeger
