@@ -16,7 +16,7 @@
 <!-- /TOC -->
 ## Prerequisites
 
-Prerequistes are install Operators requried by OpenShift Service Mesh. You need to install following Operators from OperatorHub.
+Prerequisites are install Operators requried by OpenShift Service Mesh. You need to install following Operators from OperatorHub.
 
   - ElasticSearch
   - Jaeger
@@ -269,21 +269,22 @@ Prerequistes are install Operators requried by OpenShift Service Mesh. You need 
     openssl x509 -req -days 365 -CA certs/acme.com.crt -CAkey certs/acme.com.key -set_serial 0 -in certs/great-partner.csr -out certs/great-partner.crt
     ```
 - Update secret with client's CA
-    
+
   ```bash
-  oc delete secret frontend-credential -n control-plane
   oc create secret generic frontend-credential \
   --from-file=tls.key=certs/frontend.key \
   --from-file=tls.crt=certs/frontend.crt \
   --from-file=ca.crt=certs/acme.com.crt \
-  -n control-plane
-  ``` 
+  -n control-plane --dry-run=client -o yaml \
+  | oc replace -n control-plane secret frontend-credential -f -
+  ```
+  
 - Updating [Gateway](config/gateway-mtls.yaml) with mTLS. Check that Gateway mTLS mode is set to MUTUAL
   
   ```bash
   SUBDOMAIN=$(oc whoami --show-console  | awk -F'apps.' '{print $2}')
   DOMAIN="apps.${SUBDOMAIN}"
-  curl -s  https://raw.githubusercontent.com/voraviz/openshift-service-mesh-ingress-mtls/main/config/gateway-mtls.yaml| sed 's/DOMAIN/'"$DOMAIN"'/' | oc apply -f -
+  curl -s  https://raw.githubusercontent.com/voraviz/openshift-service-mesh-ingress-mtls/main/config/gateway-mtls.yaml | sed 's/DOMAIN/'"$DOMAIN"'/' | oc apply -f -
   ```
 - Use cURL to test without client certificate
   
@@ -338,14 +339,14 @@ Prerequistes are install Operators requried by OpenShift Service Mesh. You need 
     ```
 
   - Update frontend-credential secert
-    
+  
     ```bash
-    oc delete secret frontend-credential -n control-plane
     oc create secret generic frontend-credential \
     --from-file=tls.key=certs/frontend.key \
     --from-file=tls.crt=certs/frontend.crt \
     --from-file=ca.crt=certs/trusted.crt \
-    -n control-plane    
+    -n control-plane --dry-run=client -o yaml \
+    | oc replace -n control-plane secret frontend-credential -f -
     ```
     
   - Test with cURL using *Pirate Inc* and *Acme Inc* certificate.
