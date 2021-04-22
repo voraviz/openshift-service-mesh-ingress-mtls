@@ -45,6 +45,9 @@ spec:
             value: 'false'
         ports:
         - containerPort: 8080
+      securityContext:
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -74,7 +77,6 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
     spec:
-
       containers:
       - name: frontend
         image: quay.io/voravitl/frontend-js:v1
@@ -91,6 +93,9 @@ spec:
             memory: 100Mi
         ports:
         - containerPort: 8080
+      securityContext:
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
 ---
 apiVersion: v1
 kind: Service
