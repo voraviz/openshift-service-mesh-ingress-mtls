@@ -34,7 +34,6 @@ function get_control_plane_status(){
   DONE=1
   while [ $DONE -ne 0 ];
   do
-    sleep 5
     clear
     CURRENT_STATUS=$(oc get smcp basic-install -n $CONTROL_PLANE -o jsonpath='{.status.annotations.readyComponentCount}')
     printf "Ready Component Count: %s\n" "$CURRENT_STATUS"
@@ -52,6 +51,7 @@ function get_control_plane_status(){
     then
       DONE=0
     fi
+    sleep 20
   done
 }
 
@@ -130,6 +130,8 @@ fi
 echo "Create Control Plane"
 echo "Script will automatically continue to next steps when control plane is finished"
 oc apply -f setup-ossm/smcp.yaml -n $CONTROL_PLANE
+echo "Wait 40 sec before check control plane status"
+sleep 40
 get_control_plane_status
 
 echo "Join Data Plane to Control Plane"
