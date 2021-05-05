@@ -1,34 +1,15 @@
 apiVersion: maistra.io/v2
-# Istio 1.6.5
 kind: ServiceMeshControlPlane
 metadata:
   name: basic-install
 spec:
-  meshConfig:
-    localityLbSetting:
-      enabled: false
-  security:
-    controlPlane:
-      mtls: true
-    dataPlane:
-      automtls: true
-      mtls: false
+  version: v2.0
   tracing:
     sampling: 10000
     type: Jaeger
   gateways:
-    egress:
-        enabled: true
-        runtime:
-          container:
-            resources:
-              requests:
-                cpu: 10m
-                memory: 128Mi
-          deployment:
-            autoScaling:
-              enabled: true
-          service: {}
+    openshiftRoute:
+      enabled: true
     ingress:
         enabled: true
         ingress: false
@@ -38,23 +19,33 @@ spec:
               requests:
                 cpu: 10m
                 memory: 128Mi
+              limits:
+                cpu: 500m
+                memory: 512Mi
           deployment:
             autoScaling:
+              maxReplicas: 2
+              minReplicas: 1
+              targetCPUUtilizationPercentage: 85
               enabled: true
+            pod:
+              tolerations:
+              - key: node.kubernetes.io/unreachable
+                operator: Exists
+                effect: NoExecute
+                tolerationSeconds: 60
         service:
           type: ClusterIP
-    openshiftRoute:
-      enabled: true
+    egress:
+        enabled: false
   general:
     logging:
       componentLevels:
         default: info
       logAsJSON: false
   policy:
-    mixer:
-      enableChecks: true
+    istiod:
       failOpen: false
-      sessionAffinity: false
     type: Istiod
   addons:
     grafana:
@@ -67,12 +58,37 @@ spec:
       enabled: true
     prometheus:
       enabled: true
-  version: v2.0
   runtime:
+    components:
+      prometheus:                   
+        deployment:
+          replicas: 1
+        podDisruption:
+          enabled: false
+          minAvailable: 1
+        pod:
+          tolerations:
+          - key: node.kubernetes.io/unreachable
+            operator: Exists
+            effect: NoExecute
+            tolerationSeconds: 60        
+      pilot:
+        deployment:
+          replicas: 1
+        podDisruption:
+          enabled: false
+          minAvailable: 1
+        pod:
+          tolerations:
+          - key: node.kubernetes.io/unreachable
+            operator: Exists
+            effect: NoExecute
+            tolerationSeconds: 60
     defaults:
       deployment:
         podDisruption:
           enabled: false
+          minAvailable: 1
   telemetry:
     type: Istiod
   proxy:
