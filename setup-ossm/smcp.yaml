@@ -1,12 +1,17 @@
+# https://github.com/maistra/istio-operator/blob/maistra-2.0/pkg/apis/maistra/v2/smcp_new.yaml
 apiVersion: maistra.io/v2
 kind: ServiceMeshControlPlane
 metadata:
   name: basic-install
 spec:
   version: v2.0
-  tracing:
-    sampling: 10000
-    type: Jaeger
+  security:
+    dataPlane:
+      mtls: true
+      automtls: true
+    controlPlane:
+      mtls: true
+      automtls: true
   gateways:
     openshiftRoute:
       enabled: true
@@ -24,10 +29,12 @@ spec:
                 memory: 512Mi
           deployment:
             autoScaling:
-              maxReplicas: 2
-              minReplicas: 1
+              maxReplicas: 4
+              minReplicas: 2
               targetCPUUtilizationPercentage: 85
               enabled: true
+            podDisruption:
+              enabled: false
             pod:
               tolerations:
               - key: node.kubernetes.io/unreachable
@@ -44,9 +51,7 @@ spec:
         default: info
       logAsJSON: false
   policy:
-    istiod:
-      failOpen: false
-    type: Istiod
+    type: Istiod # or Mixer or Remote, Mixer is default for pre v2.0
   addons:
     grafana:
       enabled: true
@@ -71,30 +76,25 @@ spec:
           - key: node.kubernetes.io/unreachable
             operator: Exists
             effect: NoExecute
-            tolerationSeconds: 60        
-      pilot:
-        deployment:
-          replicas: 1
-        podDisruption:
-          enabled: false
-          minAvailable: 1
-        pod:
-          tolerations:
-          - key: node.kubernetes.io/unreachable
-            operator: Exists
-            effect: NoExecute
             tolerationSeconds: 60
-    defaults:
-      deployment:
-        podDisruption:
-          enabled: false
-          minAvailable: 1
+    # defaults:
+    #   deployment:
+    #     podDisruption:
+    #       enabled: false
+    #       minAvailable: 1
   telemetry:
     type: Istiod
   proxy:
+   networking:
+    trafficControl:
+      outbound:
+        policy: ALLOW_ANY # Change to REGISTRY_ONLY to block by default
     accessLogging:
       envoyService:
-        enabled: false
+        enabled: true
       file:
         encoding: TEXT
-        name: /dev/stdout
+        name: /dev/stdout 
+  tracing:
+    sampling: 10000 # scaled integer, 0-100% in 0.01% increments, i.e. 1=.001%, 100=1%, 10000=100%
+    type: Jaeger
