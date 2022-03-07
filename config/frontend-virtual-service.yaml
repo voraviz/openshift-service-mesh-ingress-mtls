@@ -5,9 +5,9 @@ metadata:
   namespace: data-plane
 spec:
   hosts:
-  - frontend.DOMAIN
+    - frontend.DOMAIN
   gateways:
-  - control-plane/frontend-gateway
+    - control-plane/frontend-gateway
   http:
   - route:
     - destination:
